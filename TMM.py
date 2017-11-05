@@ -98,15 +98,14 @@ def TMM(first):
 
     for iteration in range(1, 21):
         print(iteration)
-        #print(relevant_doc[0][0])
         for q in range(len(relevant_doc_word)):  # query 800
             tmm = copy.deepcopy(tmm_list[q])
-            if iteration == 1:
-                for tmm_voc in tmm:
-                    tmm[tmm_voc] = random.random()
-                tmm_total = sum(tmm.values())
-                for tmm_voc in tmm:
-                    tmm[tmm_voc] /= tmm_total
+            # if iteration == 1:
+            #     for tmm_voc in tmm:
+            #         tmm[tmm_voc] = random.random()
+                # tmm_total = sum(tmm.values())
+                # for tmm_voc in tmm:
+                #     tmm[tmm_voc] /= tmm_total
             twd = copy.deepcopy(relevant_doc[q])
 
             # E_Step
@@ -124,21 +123,33 @@ def TMM(first):
                 molecular = sum(doc[word] * twd[doc_id][word] for doc_id, doc in enumerate(relevant_doc[q]) if word in doc)
                 molecular_list.append(molecular)
             denominator = sum(molecular_list)
+
             for word_id, word in enumerate(tmm):
                 tmm[word] = molecular_list[word_id] / denominator
             tmm_list[q] = tmm
+
     return tmm_list
 
 
 def KL(tmm_query):
     global QUERY, DOCUMENT, RANKING, DOC_NAME
     for q_id, q in enumerate(QUERY):
+        if q_id % 100 == 0:
+            print(q_id)
         kl_list = []
+        # qaddtq = tmm_query[q_id].copy()
+        # qaddtq.update(q)
+        # qaddtq_total = sum(qaddtq.values())
+        q_total = sum(q.values())
+        tq = tmm_query[q_id]
+        tq_total = sum(tq.values())
         #KL
         for doc in DOCUMENT:
-            kl_score = sum(-((q[q_word] / sum(q.values())) * math.log10(doc[q_word] / sum(doc.values()))) for q_word in q if q_word in doc)
-            tq = tmm_query[q_id]
-            kl_score += sum(-((tq[q_word] / sum(tq.values())) * math.log10(doc[q_word] / sum(doc.values()))) for q_word in tq if q_word in doc)
+            doc_total = sum(doc.values())
+            # kl_score = sum(-((qaddtq[q_word] / qaddtq_total) * math.log10(doc[q_word] / doc_total))
+            #                for q_word in qaddtq if q_word in doc)
+            kl_score = sum(-((q[q_word] / q_total) * math.log10(doc[q_word] / doc_total)) for q_word in q if q_word in doc)
+            kl_score += sum(-((tq[q_word] / tq_total) * math.log10(doc[q_word] / doc_total)) for q_word in tq if q_word in doc)
             kl_list.append(kl_score)
         #sorting
         sort = sorted(kl_list, reverse=True)
@@ -149,19 +160,17 @@ def KL(tmm_query):
         RANKING.append(q_rank)
 
 
+
 def writefile():
     global QUERY_NAME, DOC_NAME, RANKING
-    with open('test2.txt', 'w') as retrieval_file:
+    with open('test3.txt', 'w') as retrieval_file:
         retrieval_file.write("Query,RetrievedDocuments\n")
         for retrieval_id, retrieval_list in enumerate(RANKING):
             retrieval_file.write(QUERY_NAME[retrieval_id] + ',')
-            i = 0
-            for retrieval_name in retrieval_list:
+            for retrieval_name in retrieval_list[0:100]:
                 retrieval_file.write(retrieval_name + ' ')
-                i += 1
-            if retrieval_id != len(QUERY_NAME) - 1 and i == 100:
+            if retrieval_id != len(QUERY_NAME) - 1:
                 retrieval_file.write('\n')
-                break
 
 
 readfile()
