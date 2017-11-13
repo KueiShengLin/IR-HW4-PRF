@@ -264,7 +264,7 @@ def readfile():
     print('read file down')
 
 
-# readfile()
-# VSMa = VSM(DOC_NAME, QUERY_NAME, DOCUMENT, QUERY, 5)
-# VSMa.calculate()
+readfile()
+VSMa = VSM(DOC_NAME, QUERY_NAME, DOCUMENT, QUERY, 5)
+VSMa.calculate()
 
