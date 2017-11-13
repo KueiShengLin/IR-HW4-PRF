@@ -1,6 +1,6 @@
 import os
 import re
-import random
+import time
 import math
 import copy
 from Vector_Space_Model import VSM
@@ -16,9 +16,9 @@ BG = []
 ROCCHIO_ALPHA = 0.7
 ROOCHIO_BETA = 0.3
 TMM_ALPHA = 0.3
-TMM_BETA = 0.3
-KL_A = 0.5
-KL_B = 0.0
+TMM_BETA = 0.2
+KL_A = 0.4
+KL_B = 0.3
 KL_D = 0.7
 
 RANKING = []
@@ -107,7 +107,7 @@ def TMM(first):
 
     tmm_list = copy.deepcopy(relevant_doc_word)
 
-    for iteration in range(1, 21):
+    for iteration in range(1, 20):
         print(iteration)
         for q in range(len(relevant_doc_word)):  # query 800
             tmm = copy.deepcopy(tmm_list[q])
@@ -170,7 +170,7 @@ def KL(tmm_query):
     for q_id, q in enumerate(QUERY):
         if q_id % 100 == 0:
             print(q_id)
-
+            print(time.strftime("%D,%H:%M:%S"))
         kl_list = []
         tmq = copy.deepcopy(tmm_query[q_id])
 
@@ -178,32 +178,46 @@ def KL(tmm_query):
         new_q = copy.deepcopy(q)
         new_q.update(tmq)
 
-        for q_word in new_q:
-            base_q, tmm, pbg = 0, 0, 0
-            new_q[q_word] = 0
-
-            if q_word in tmq:
-                tmm = tmq[q_word]
-            if q_word in q:
-                base_q = q[q_word]
-            if int(q_word) < len(BG):
-                pbg = math.exp(BG[int(q_word)])
-
-            new_q[q_word] = (KL_A * base_q / q_total) + (KL_B * tmm) + ((1 - KL_A - KL_B) * pbg)
+        # for q_word in new_q:
+        #     base_q, tmm, pbg = 0, 0, 0
+        #     new_q[q_word] = 0
+        #
+        #     if q_word in tmq:
+        #         tmm = tmq[q_word]
+        #     if q_word in q:
+        #         base_q = q[q_word]
+        #     if int(q_word) < len(BG):
+        #         pbg = math.exp(BG[int(q_word)])
+        #
+        #     new_q[q_word] = (KL_A * base_q / q_total) + (KL_B * tmm) + ((1 - KL_A - KL_B) * pbg)
         #KL
-        for doc in DOCUMENT:
+        for doc_id, doc in enumerate(DOCUMENT):
             doc_total = sum(doc.values())
-            # kl_score = -sum(new_q[q_word] * math.log((KL_D * doc[q_word] / doc_total) + ((1 - KL_D) * math.exp(BG[int(q_word)])), math.e)
-            #                 for q_word in new_q if q_word in doc)
             kl_score = 0
             for q_word in new_q:
+                if doc_id == 0:
+                    base_q, tmm, pbg = 0, 0, 0
+                    new_q[q_word] = 0
+
+                    if q_word in tmq:
+                        tmm = tmq[q_word]
+                    if q_word in q:
+                        base_q = q[q_word]
+                    if int(q_word) < len(BG):
+                        pbg = math.exp(BG[int(q_word)])
+
+                    new_q[q_word] = (KL_A * base_q / q_total) + (KL_B * tmm) + ((1 - KL_A - KL_B) * pbg)
+
                 if q_word in doc:
                     new_doc = (KL_D * doc[q_word] / doc_total) + ((1 - KL_D) * math.exp(BG[int(q_word)]))
+                    kl_score -= (new_q[q_word]) * math.log10(new_doc)
+                else:
+                    new_doc = ((1 - KL_D) * math.exp(BG[int(q_word)]))
                     kl_score -= (new_q[q_word]) * math.log10(new_doc)
             kl_list.append(kl_score)
 
         #sorting
-        sort = sorted(kl_list, reverse=True)
+        sort = sorted(kl_list)
         q_rank = []
         for sort_num in sort:
             q_rank.append(DOC_NAME[kl_list.index(sort_num)])
@@ -305,21 +319,21 @@ readfile()
 # VSM_re.writeAns('VSM5')
 print('VSM down')
 answer = ans_read('VSM\\VSM1.txt')
-# tmm_query = TMM(answer)
-# print('TMM down')
-# KL(tmm_query)
-# writefile('KL')
-# print('KL down')
+tmm_query = TMM(answer)
+print('TMM down')
+KL(tmm_query)
+writefile('VSM1100')
+print('KL down')
 
 # QL(tmm_query)
 # writefile('QL')
 # print('QL down')
 
 
-new_que = relevant_doc(answer)
-VSM_ro = VSM(doc_name=DOC_NAME, query_name=QUERY_NAME, document=DOCUMENT, query=QUERY, rank_amount=100)
-VSM_ro.rocchioauto(0.6, 0.4, new_que, 1)
-VSM_ro.writeAns('roteee2')
+# new_que = relevant_doc(answer)
+# VSM_ro = VSM(doc_name=DOC_NAME, query_name=QUERY_NAME, document=DOCUMENT, query=QUERY, rank_amount=100)
+# VSM_ro.rocchioauto(0.6, 0.4, new_que, 1)
+# VSM_ro.writeAns('roteee2')
 
 
 print('Process down')
